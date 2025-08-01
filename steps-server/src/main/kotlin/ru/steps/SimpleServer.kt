@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 fun main() {
     val ip = getLocalIP()
     println("Run server on $ip")
-    serverWithKtor(ip)
+    sendMessage()
 }
 
 // через консоль на маке "nc 192.168.1.100 8888"

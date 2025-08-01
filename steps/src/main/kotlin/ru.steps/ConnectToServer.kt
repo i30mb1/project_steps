@@ -6,24 +6,30 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import kotlin.collections.iterator
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 
 object Server {
 
     val state = MutableSharedFlow<String>()
 
-   suspend fun createServer() {
+    suspend fun createServer() {
         val ip = getLocalIP()
         state.emit(ip)
         val server = ServerSocket(8888, 0, InetAddress.getByName(ip))
-        val socket = server.accept()
-
-        val writer = OutputStreamWriter(socket.getOutputStream())
-        writer.write("Привет!\n")
-        writer.flush()
-
-        socket.close()
-        server.close()
+        while (true) {
+            val socket = server.accept()
+            GlobalScope.launch {
+                val writer = OutputStreamWriter(socket.getOutputStream())
+                while (true) {
+                    delay(1000)
+                    writer.write("Привет!\n")
+                    writer.flush()
+                }
+            }
+        }
     }
 
     fun getLocalIP(): String {
