@@ -2,6 +2,7 @@ plugins {
     id("com.android.application") version "8.11.0"
     id("org.jetbrains.kotlin.android") version "2.1.20"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.20"
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 java {
@@ -40,4 +41,6 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.8.3")
     implementation("androidx.compose.material:material:1.8.3")
     implementation("androidx.compose.material3:material3:1.3.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.2.3")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.3")
 }

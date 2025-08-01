@@ -1,5 +1,6 @@
 package ru.steps
 
+import kotlin.time.Duration.Companion.seconds
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,13 +13,18 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class StepCounterWorker(
     context: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(context, workerParams) {
 
+    private val scope = CoroutineScope(Job())
     private var notificationManager: NotificationManager? = null
     private val counter by lazy { StepCounter(context) }
 
@@ -26,8 +32,16 @@ class StepCounterWorker(
         createNotificationChannel()
         setForeground(createForegroundInfo())
         counter.startCounting()
+
+        scope.launch {
+            while (true) {
+                delay(10.seconds)
+                HttpServer.sendSteps(counter.totalSteps)
+            }
+        }
+
         while (true) {
-            delay(10_000)
+            delay(1_000)
             updateNotification(counter.totalSteps)
         }
         return Result.success()
