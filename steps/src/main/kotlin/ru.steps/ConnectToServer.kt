@@ -1,38 +1,41 @@
 package ru.steps
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.plugins.websocket.webSocket
-import io.ktor.http.HttpMethod
-import io.ktor.websocket.Frame
-import io.ktor.websocket.readText
-import io.ktor.websocket.send
+import java.io.OutputStreamWriter
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.ServerSocket
+import kotlin.collections.iterator
+import kotlinx.coroutines.flow.MutableSharedFlow
 
-object ConnectToServer {
-    val client = HttpClient(CIO) {
-        install(WebSockets)
+object Server {
+
+    val state = MutableSharedFlow<String>()
+
+   suspend fun createServer() {
+        val ip = getLocalIP()
+        state.emit(ip)
+        val server = ServerSocket(8888, 0, InetAddress.getByName(ip))
+        val socket = server.accept()
+
+        val writer = OutputStreamWriter(socket.getOutputStream())
+        writer.write("Привет!\n")
+        writer.flush()
+
+        socket.close()
+        server.close()
     }
 
-    suspend fun sendMessage() {
-        client.webSocket(
-            method = HttpMethod.Get,
-            host = "192.168.100.2",
-            port = 8888,
-            path = "/server1"
-        ) {
-            send("Привет, сервер!")
-
-            for (frame in incoming) {
-                when (frame) {
-                    is Frame.Text -> {
-                        val text = frame.readText()
-                        println("Получено: $text")
-                    }
-
-                    else -> {}
+    fun getLocalIP(): String {
+        val interfaces = NetworkInterface.getNetworkInterfaces()
+        for (iface in interfaces) {
+            if (!iface.isUp || iface.isLoopback) continue
+            for (addr in iface.inetAddresses) {
+                if (addr is Inet4Address && !addr.isLoopbackAddress) {
+                    return addr.hostAddress
                 }
             }
         }
+        error("Not found local ip")
     }
 }

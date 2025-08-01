@@ -1,5 +1,10 @@
 package ru.steps
 
+import java.io.OutputStreamWriter
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.ServerSocket
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.webSocket
@@ -14,16 +19,33 @@ import io.ktor.websocket.readText
 import io.ktor.websocket.send
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.net.Inet4Address
-import java.net.NetworkInterface
 
 fun main() {
-//    OBSServer.modifyStreamPashka(false)
-    val localIp = getLocalIP()
-    embeddedServer(Netty, 8888, localIp) {
+    val ip = getLocalIP()
+    println("Run server on $ip")
+    serverWithKtor(ip)
+}
+
+// через консоль на маке "nc 192.168.1.100 8888"
+private fun serverWithJava(ip: String) {
+    val server = ServerSocket(8888, 0, InetAddress.getByName(ip))
+    val socket = server.accept()
+
+    val writer = OutputStreamWriter(socket.getOutputStream())
+    writer.write("Привет!\n")
+    writer.flush()
+
+    socket.close()
+    server.close()
+}
+
+// проверяю через консоль на маке "websocat ws://172.30.207.162:8888/server1"
+private fun serverWithKtor(ip: String) {
+    embeddedServer(Netty, 8888, ip) {
         install(WebSockets)
         routing {
             webSocket("/server1") {
+                send("Привет, сервер!")
                 for (frame in incoming) {
                     frame as? Frame.Text ?: continue
                     val receivedText = frame.readText()
